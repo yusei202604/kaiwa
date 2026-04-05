@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>かいわ</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+</head>
+<body>
+  <div class="shell">
+    <header class="hero">
+      <p class="eyebrow">Conversation Support</p>
+      <h1>かいわ</h1>
+      <p class="lede">ブラウザだけで文字会話をつなぐ、聴覚障害者向けの会話支援アプリ。</p>
+    </header>
+
+    <div id="error-box" class="error-box" role="alert" aria-live="assertive" hidden></div>
+    <div id="diag-box" class="diag-box" role="status" aria-live="polite" hidden></div>
+    <div id="log-box" class="log-box" role="status" aria-live="polite" hidden></div>
+
+    <main>
+      <section id="screen-start" class="screen">
+        <div class="panel stack">
+          <h2>はじめる</h2>
+          <p>本人端末も会話相手端末も同じ URL を開きます。本人は接続情報を表示し、会話相手は QR または共有コードで参加します。</p>
+          <div class="flow-grid" aria-label="使い方">
+            <article class="step-card">
+              <span class="step-badge">1</span>
+              <h3>同じ URL を開く</h3>
+              <p>本人も会話相手も、同じ HTTPS の画面を開きます。</p>
+            </article>
+            <article class="step-card">
+              <span class="step-badge">2</span>
+              <h3>本人が開始する</h3>
+              <p>本人側は「この端末で開始」を押して、接続情報を表示します。</p>
+            </article>
+            <article class="step-card">
+              <span class="step-badge">3</span>
+              <h3>会話相手が参加する</h3>
+              <p>相手側は QR を読むか、共有コードを貼り付けて参加します。</p>
+            </article>
+          </div>
+          <p class="support-note">QR が読み取りにくい場合でも、共有コードのコピーと貼り付けだけで同じ手順を進められます。</p>
+          <div class="actions">
+            <button id="action-start-host" class="primary" type="button">この端末で開始</button>
+            <button id="action-start-join" type="button">同じ URL で参加</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-host" class="screen" hidden>
+        <div class="panel stack">
+          <div class="panel-head">
+            <div class="panel-head-copy">
+              <p class="role-label">本人側</p>
+              <h2>この端末で開始</h2>
+            </div>
+            <button id="action-host-back" class="ghost" type="button">戻る</button>
+          </div>
+          <p id="host-status" class="status" role="status" aria-live="polite">接続情報を準備しています…</p>
+          <p class="support-note compact">QR が読めない場合は、共有コードのコピーまたは貼り付けで進められます。</p>
+          <div class="exchange-grid">
+            <div class="qr-card">
+              <h3>QR 表示</h3>
+              <div id="host-offer-qr" class="qr-box" aria-live="polite"></div>
+              <p id="host-offer-qr-note" class="hint"></p>
+            </div>
+            <div class="code-card stack">
+              <h3>共有コード</h3>
+              <textarea
+                id="host-offer-code"
+                class="code-input"
+                rows="8"
+                readonly
+                spellcheck="false"
+                autocapitalize="off"
+                autocomplete="off"
+                autocorrect="off"
+              ></textarea>
+              <div class="actions">
+                <button id="action-copy-offer" type="button">コピー</button>
+                <button id="action-share-offer" type="button">共有</button>
+              </div>
+            </div>
+          </div>
+          <div class="stack">
+            <h3>相手の応答を受け取る</h3>
+            <div class="actions">
+              <button id="action-scan-answer" type="button">相手の QR を読む</button>
+              <button id="action-paste-answer" type="button">共有コードを貼り付ける</button>
+            </div>
+            <video id="video-host" class="video" playsinline autoplay muted hidden></video>
+            <textarea
+              id="host-answer-input"
+              class="code-input"
+              rows="6"
+              placeholder="相手から受け取った共有コードを貼り付け"
+              spellcheck="false"
+              autocapitalize="off"
+              autocomplete="off"
+              autocorrect="off"
+              hidden
+            ></textarea>
+            <div id="host-answer-paste-actions" class="actions" hidden>
+              <button id="action-apply-answer" class="primary" type="button">応答を適用</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-join" class="screen" hidden>
+        <div class="panel stack">
+          <div class="panel-head">
+            <div class="panel-head-copy">
+              <p class="role-label">会話相手側</p>
+              <h2>会話相手</h2>
+            </div>
+            <button id="action-join-back" class="ghost" type="button">戻る</button>
+          </div>
+          <p id="join-status" class="status" role="status" aria-live="polite">本人が表示した QR または共有コードを受け取ってください。</p>
+          <p class="support-note compact">カメラが使えない場合や読み取りが不安定な場合は、共有コードの貼り付けへ切り替えてください。</p>
+          <div class="actions">
+            <button id="action-scan-offer" class="primary" type="button">QR を読む</button>
+            <button id="action-paste-offer" type="button">共有コードを貼り付ける</button>
+          </div>
+          <video id="video-join" class="video" playsinline autoplay muted hidden></video>
+          <textarea
+            id="join-offer-input"
+            class="code-input"
+            rows="8"
+            placeholder="本人から受け取った共有コードを貼り付け"
+            spellcheck="false"
+            autocapitalize="off"
+            autocomplete="off"
+            autocorrect="off"
+            hidden
+          ></textarea>
+          <div id="join-offer-paste-actions" class="actions" hidden>
+            <button id="action-apply-offer" class="primary" type="button">接続情報を読み込む</button>
+          </div>
+
+          <div id="answer-section" class="stack" hidden>
+            <h3>本人へ返す接続情報</h3>
+            <div class="exchange-grid">
+              <div class="qr-card">
+                <h4>QR 表示</h4>
+                <div id="join-answer-qr" class="qr-box"></div>
+                <p id="join-answer-qr-note" class="hint"></p>
+              </div>
+              <div class="code-card stack">
+                <h4>共有コード</h4>
+                <textarea
+                  id="join-answer-code"
+                  class="code-input"
+                  rows="8"
+                  readonly
+                  spellcheck="false"
+                  autocapitalize="off"
+                  autocomplete="off"
+                  autocorrect="off"
+                ></textarea>
+                <div class="actions">
+                  <button id="action-copy-answer" type="button">コピー</button>
+                  <button id="action-share-answer" type="button">共有</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="screen-chat" class="screen" hidden>
+        <div class="panel stack">
+          <div class="panel-head">
+            <h2>会話</h2>
+            <button id="action-chat-back" class="ghost" type="button">終了</button>
+          </div>
+          <div id="messages" class="messages" aria-live="polite"></div>
+          <div class="composer">
+            <textarea id="msg-input" rows="3" placeholder="メッセージを入力"></textarea>
+            <button id="action-send-message" class="primary" type="button">送信</button>
+          </div>
+          <p class="support-note compact">Enter で送信、Shift+Enter で改行できます。入力中の文字は相手の画面に下書きとして表示されます。</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="./js/main.js"></script>
+</body>
+</html>
